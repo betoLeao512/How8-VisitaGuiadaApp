@@ -1,0 +1,40 @@
+Fase: RED
+Diretório: . (raiz do projeto HOW8-App)
+Node: v24.16.0
+Comando: npm test -- --runInBand --watch=false --no-cache src/domain/score.test.ts
+Implementação score.ts existente: false
+
+
+> how8-app@1.0.0 test
+> jest --runInBand --watch=false --no-cache src/domain/score.test.ts
+
+FAIL src/domain/score.test.ts
+  ● Test suite failed to run
+
+    Cannot find module './score' from 'src/domain/score.test.ts'
+
+    However, Jest was able to find:
+    	'./score.test.ts'
+
+    You might want to include a file extension in your import, or update your 'moduleFileExtensions', which is currently ['js', 'mjs', 'cjs', 'jsx', 'ts', 'mts', 'cts', 'tsx', 'json', 'node'].
+
+    See https://jestjs.io/docs/configuration#modulefileextensions-arraystring
+
+    > 1 | import { calculateScore } from './score';
+        | ^
+      2 |
+      3 | describe('calculateScore', () => {
+      4 |   test('resposta correta retorna 100 pontos', () => {
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:1031:11)
+      at Object.require (src/domain/score.test.ts:1:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.687 s
+Ran all test suites matching src/domain/score.test.ts.
+
+Código de saída: 1
+
+Análise: falha esperada por ausência da implementação src/domain/score.ts. A suíte não carregou; os três casos declarados ainda não executaram.
