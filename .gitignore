@@ -31,7 +31,12 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
+
+# sanitized environment example
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -39,3 +44,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local-only folders at repository root
+/How8-VisitaGuiadaApp/
+/evidencias-prototipo/
