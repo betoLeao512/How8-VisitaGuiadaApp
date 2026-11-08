@@ -16,12 +16,12 @@ Versões resolvidas no `package-lock.json` e conferidas nas dependências instal
 
 | Tecnologia | Versão |
 | --- | --- |
-| React Native | 0.88.0 |
-| Expo | 58.0.19 — SDK 58 |
+| React Native | 0.88.1 |
+| Expo | 58.0.23 — SDK 58 |
 | React | 19.3.0 |
 | TypeScript | 6.0.3 |
 | Jest | 30.5.2 |
-| jest-expo | 58.0.12 |
+| jest-expo | 58.0.14 |
 
 O `package.json` define os intervalos de versões permitidos; o arquivo de lock registra as versões utilizadas para uma instalação reproduzível.
 
@@ -46,7 +46,7 @@ Nome, resposta e pontuação permanecem somente em memória durante a execução
 - Node.js **24 LTS, a partir de 24.3.0 na série 24.x**, com npm. Essa faixa atende aos requisitos declarados pelas versões instaladas de Expo e React Native.
 - Um ambiente compatível para abrir o aplicativo: Android Emulator, iOS Simulator no macOS ou Expo Go compatível com o SDK 58.
 
-O Android Emulator requer configuração do Android Studio; o iOS Simulator requer macOS e Xcode. A execução em dispositivo físico ainda precisa ser validada para este projeto.
+O Android Emulator requer configuração do Android Studio; o iOS Simulator requer macOS e Xcode. A versão Release foi validada em iPhone 8 Plus com iOS 16.7.16; isso não representa validação das demais plataformas.
 
 ### Instalação
 
@@ -66,14 +66,28 @@ npm start
 
 Esse script executa `expo start`. Com o servidor de desenvolvimento ativo, use as opções do terminal para abrir um emulador/simulador ou escanear o QR code com uma versão compatível do Expo Go. Em dispositivo físico, computador e aparelho precisam de conectividade entre si.
 
-Também estão disponíveis os scripts de inicialização por plataforma:
+Também estão disponíveis os scripts de compilação e execução nativa por plataforma:
 
 ```sh
 npm run android
 npm run ios
 ```
 
-Eles executam `expo start --android` e `expo start --ios`, respectivamente, e dependem do ambiente correspondente configurado. A existência desses scripts não representa validação do aplicativo em todas as plataformas.
+Eles executam `expo run:android` e `expo run:ios`, respectivamente, e dependem das ferramentas nativas da plataforma. Podem gerar os diretórios nativos quando ausentes e compilar o aplicativo; por padrão, utilizam configuração de desenvolvimento e Metro. A existência desses scripts não representa validação do aplicativo em todas as plataformas.
+
+### Compilação iOS Release e validação física
+
+O identificador iOS é `com.how8.visitacidada`. O ambiente utilizado foi Node.js 24.16.0, macOS Tahoe 26.7.2, Xcode 26.4.1 e CocoaPods 1.17.0. Para compilar e instalar em um iPhone conectado, após configurar a assinatura local no Xcode:
+
+```sh
+npx --no-install expo run:ios --configuration Release --device --no-bundler --no-install
+```
+
+Esse comando pressupõe que o projeto iOS já foi gerado e os Pods estão instalados. Use Node 24 também nos scripts do Xcode. A configuração Release incorpora JavaScript e recursos; `--no-bundler` evita iniciar o servidor de desenvolvimento, e `--no-install` evita reinstalar dependências.
+
+Os diretórios `ios/` e `android/` são gerados pelo Expo Prebuild e permanecem ignorados pelo Git, conforme a estratégia de [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/). As configurações reproduzíveis ficam em `app.json` e no lockfile JavaScript. A equipe e as credenciais de assinatura são locais e precisam ser configuradas novamente após regenerar o projeto ou preparar outro Mac. Não versionar certificados, perfis, logs ou arquivos de ambiente locais.
+
+Em 07/11/2026, o usuário aprovou no iPhone 8 Plus com iOS 16.7.16 a abertura, identificação do grupo, desafio dos Três Poderes, temporizador, resposta, pontuação e reinício em modo avião, com Wi-Fi desligado e sem Metro. A instalação utilizou Personal Team gratuito; foi necessário confiar no desenvolvedor no próprio aparelho. O perfil dessa instalação vence em 14/11/2026 e exigirá nova assinatura e instalação após expirar.
 
 Referências: [Expo SDK 58](https://docs.expo.dev/versions/v58.0.0/) e [inicialização do ambiente de desenvolvimento](https://docs.expo.dev/get-started/start-developing/).
 
@@ -105,7 +119,7 @@ npx --no-install expo install --check
 
 Confere as versões esperadas para o SDK instalado. A verificação completa pode consultar metadados pela rede. Esse comando não substitui uma auditoria de vulnerabilidades.
 
-Os três testes unitários e a verificação TypeScript foram executados com sucesso na preparação desta documentação. Isso não equivale a validação funcional em dispositivo físico. Não há comando de lint configurado no `package.json`.
+Na consolidação da baseline iOS, os três testes unitários, a verificação TypeScript e a checagem online de compatibilidade Expo foram aprovados. A validação física manual descrita acima complementa esses testes, sem ampliar a cobertura automatizada. Não há comando de lint configurado no `package.json`.
 
 ## TDD aplicado à pontuação
 
@@ -130,7 +144,7 @@ Esses registros documentam a construção da regra de pontuação, não a cobert
 - Não há backend, banco de dados, autenticação, persistência de visitas ou ranking entre grupos.
 - O fluxo de visita não contempla ainda um roteiro completo com múltiplas etapas e desafios.
 - A cobertura automatizada está restrita à pontuação. Faltam testes de componentes, interação, temporização e fluxo completo.
-- Não há validação em dispositivo físico nem estudo de uso com visitantes documentados nesta versão.
+- A validação física está limitada ao fluxo atual em um iPhone 8 Plus com iOS 16.7.16. Ainda não há estudo de uso com visitantes nem validação física de outros aparelhos ou Android.
 - O script web existe no `package.json`, mas `react-dom` e `react-native-web` não estão declarados como dependências diretas. A execução web não é apresentada como ambiente pronto ou validado.
 
 ## Próximos passos — Etapa 2
@@ -138,5 +152,5 @@ Esses registros documentam a construção da regra de pontuação, não a cobert
 - Definir e priorizar os incrementos do MVP para a jornada de visita guiada.
 - Evoluir o fluxo e o conteúdo educativo a partir dos requisitos da Etapa 2.
 - Ampliar os testes para interface, respostas, temporizador, reinício e integração entre as etapas.
-- Validar a execução em dispositivos físicos e revisar acessibilidade e usabilidade.
+- Ampliar a validação para outros dispositivos físicos e revisar acessibilidade e usabilidade.
 - Realizar avaliação com usuários no contexto das visitas e incorporar os resultados às próximas iterações.
