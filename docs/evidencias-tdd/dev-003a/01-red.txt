@@ -1,0 +1,33 @@
+Fase RED — DEV-003A
+Baseline: cdbb77b17ce1033d499819e32016f537ff7b99e6
+Comando: node node_modules/jest/bin/jest.js --runInBand --watch=false --watchman=false --no-cache src/domain/groups.test.ts
+Implementação groups.ts existente: False
+
+FAIL src/domain/groups.test.ts
+  ● Test suite failed to run
+
+    Cannot find module './groups' from 'src/domain/groups.test.ts'
+
+    However, Jest was able to find:
+    	'./groups.test.ts'
+
+    You might want to include a file extension in your import, or update your 'moduleFileExtensions', which is currently ['js', 'mjs', 'cjs', 'jsx', 'ts', 'mts', 'cts', 'tsx', 'json', 'node'].
+
+    See https://jestjs.io/docs/configuration#modulefileextensions-arraystring
+
+    > 1 | import { formGroups } from './groups';
+        | ^
+      2 |
+      3 | const DOSSIERS = ['PEDESTRES', 'VEICULOS', 'LEGISLACAO', 'FISCALIZACAO'];
+      4 | const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:1031:11)
+      at Object.require (src/domain/groups.test.ts:1:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.689 s
+Ran all test suites matching src/domain/groups.test.ts.
+
+Código de saída: 1

@@ -1,0 +1,13 @@
+Fase GREEN — DEV-003A
+Node: v24.16.0
+Comando: node node_modules/jest/bin/jest.js --runInBand --watch=false --watchman=false --no-cache src/domain/groups.test.ts
+Expectativas preservadas desde RED; apenas tipos das tabelas explicitados.
+SHA-256 groups.test.ts: 2aeec04926cb6bfb415e458d0b60083c875166c199e358298563c38315ec6a02
+
+Test Suites: 1 passed, 1 total
+Tests:       59 passed, 59 total
+Snapshots:   0 total
+Time:        1.028 s
+Ran all test suites matching src/domain/groups.test.ts.
+
+Código de saída: 0

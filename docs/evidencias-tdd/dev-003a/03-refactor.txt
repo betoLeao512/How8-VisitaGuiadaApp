@@ -1,0 +1,30 @@
+Fase REFACTOR — revisão e verificações finais DEV-003A
+Revisão: validação explícita, nomes de domínio, distribuição equilibrada e um único percurso circular para os dossiês.
+Não foi identificada refatoração adicional com benefício demonstrável; implementação GREEN preservada.
+SHA-256 groups.test.ts: 2aeec04926cb6bfb415e458d0b60083c875166c199e358298563c38315ec6a02
+
+Comando: /usr/local/bin/node node_modules/jest/bin/jest.js --runInBand --watch=false --watchman=false --no-cache --coverage --collectCoverageFrom=src/domain/groups.ts --coverageReporters=text --coverageReporters=json-summary --coverageDirectory=/private/tmp/how8-dev003a-coverage
+-----------|---------|----------|---------|---------|-------------------
+File       | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-----------|---------|----------|---------|---------|-------------------
+All files  |     100 |      100 |     100 |     100 |                   
+ groups.ts |     100 |      100 |     100 |     100 |                   
+-----------|---------|----------|---------|---------|-------------------
+
+Test Suites: 3 passed, 3 total
+Tests:       89 passed, 89 total
+Snapshots:   0 total
+Time:        3.185 s
+Ran all test suites.
+
+Código de saída: 0
+
+Comando: /usr/local/bin/node node_modules/typescript/bin/tsc --noEmit
+
+Código de saída: 0
+
+Comando: git diff --exit-code
+
+Código de saída: 0
+
+Lint: não configurado no projeto; nenhuma ferramenta instalada.
