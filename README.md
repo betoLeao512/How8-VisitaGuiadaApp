@@ -37,6 +37,16 @@ Aplicativo acadêmico usado nas visitas guiadas à Câmara de Vereadores de Itaj
 4. **Tablet:** na primeira vez, digite o endereço do PC e toque em "Conectar". No iPad e no iPhone, aceite a permissão de **Rede Local**.
 5. Quando todos votarem, toque em "Encerrar a votação" no painel e use a apuração.
 
+### Com a simulação HTML (guia + telão)
+
+O servidor também pode servir a pasta da simulação. Nesse modo, a guia abre e encerra a votação pela própria simulação, e os votos dos tablets entram na contagem da guia e do telão:
+
+```sh
+npm run servidor -- ~/Desktop/plenario-em-jogo
+```
+
+Abra `http://localhost:8787` no Chrome (em vez de abrir o arquivo). "Formar grupos" e "Recomeçar" na simulação começam uma votação nova no servidor. O painel técnico continua em `http://localhost:8787/painel`. Rotas usadas pela simulação: `POST /api/guia/limpar` e `POST /api/guia/abrir` (com a turma e as regras), e `GET /api/guia` (contagem, votos e endereços).
+
 Os votos ficam salvos em `servidor/dados/sessao.json`. Se o PC reiniciar, nada se perde. Essa pasta não vai para o GitHub.
 
 ## Gerar o APK e instalar

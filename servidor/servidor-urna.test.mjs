@@ -89,3 +89,68 @@ test('JSON inválido e rota desconhecida', async () => {
   assert.equal(r.status, 400);
   assert.equal((await fetch(`${base}/api/nada`)).status, 404);
 });
+
+// ---- Integração com a simulação HTML (guia + telão) ----
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+const GRUPOS_SIM = [
+  { id: 'L1', side: 'Lia', size: 2, rule: 'Faixa para pedestres' },
+  { id: 'C1', side: 'Caio', size: 2, rule: 'Motos devagar' },
+];
+
+test('limpar com a turma da guia: votação nova, fechada e sem votos', async () => {
+  const { status, dados } = await post('/api/guia/limpar', { groups: GRUPOS_SIM });
+  assert.equal(status, 200);
+  assert.equal(dados.recebidos, 0);
+  assert.equal(dados.open, false);
+  assert.deepEqual(dados.groups, GRUPOS_SIM);
+});
+
+test('abrir com os grupos e regras da guia; votos do tablet voltam crus só para a guia', async () => {
+  const aberto = await post('/api/guia/abrir', { groups: GRUPOS_SIM, noOwn: true });
+  assert.equal(aberto.dados.open, true);
+  assert.equal(aberto.dados.noOwn, true);
+  const { sessao } = await get('/api/urna');
+  const r = await post('/api/votos', { sessao, aparelho: 't', votos: [{ id: 'x1', group: 'L1', rule: 'C1' }, { id: 'x2', group: 'L1', rule: 'L1' }] });
+  assert.deepEqual(r.dados.respostas.map(v => v.result.status), ['ACEITO', 'RECUSADO']);
+  const g = await get('/api/guia');
+  assert.deepEqual(g.votos, [{ id: 'x1', group: 'L1', rule: 'C1' }]);
+  assert.ok(Array.isArray(g.enderecos));
+});
+
+test('reabrir com a mesma turma é aceito; com outra turma e votos, é recusado', async () => {
+  assert.equal((await post('/api/guia/abrir', { groups: GRUPOS_SIM, noOwn: true })).status, 200);
+  const outra = GRUPOS_SIM.map(g => ({ ...g, size: 3 }));
+  assert.equal((await post('/api/guia/abrir', { groups: outra })).status, 409);
+});
+
+test('grupos inválidos são recusados', async () => {
+  assert.equal((await post('/api/guia/limpar', { groups: [{ id: 'L1', side: 'Lia', size: 9, rule: '' }] })).status, 400);
+  assert.equal((await post('/api/guia/limpar', { groups: [GRUPOS_SIM[0], GRUPOS_SIM[0]] })).status, 400);
+});
+
+test('serve a pasta da simulação, com Range para áudio, e não deixa sair da pasta', async () => {
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'sim-'));
+  fs.writeFileSync(path.join(pasta, 'ABRIR-plenario.html'), '<h1>guia</h1>');
+  fs.mkdirSync(path.join(pasta, 'audio'));
+  fs.writeFileSync(path.join(pasta, 'audio', 'a.mp3'), Buffer.from('0123456789'));
+  const s = criarServidor({ dataFile: null, pastaSimulacao: pasta });
+  await new Promise(r => s.listen(0, '127.0.0.1', r));
+  const b = `http://127.0.0.1:${s.address().port}`;
+  try {
+    const raiz = await fetch(`${b}/`);
+    assert.equal(raiz.headers.get('content-type'), 'text/html; charset=utf-8');
+    assert.equal(await raiz.text(), '<h1>guia</h1>');
+    const parte = await fetch(`${b}/audio/a.mp3`, { headers: { Range: 'bytes=2-4' } });
+    assert.equal(parte.status, 206);
+    assert.equal(await parte.text(), '234');
+    assert.equal((await fetch(`${b}/painel`)).status, 200);
+    assert.notEqual((await fetch(`${b}/%2e%2e/%2e%2e/etc/passwd`)).status, 200);
+    assert.notEqual((await fetch(`${b}/..%2f..%2fetc%2fpasswd`)).status, 200);
+    assert.equal((await fetch(`${b}/nao-existe.png`)).status, 404);
+  } finally {
+    s.close();
+  }
+});

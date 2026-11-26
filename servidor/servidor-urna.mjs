@@ -38,7 +38,7 @@ function novaSessao(alunos = 9) {
 }
 
 /** Cria o servidor. Exportado para os testes; `dataFile: null` desliga o arquivo. */
-export function criarServidor({ dataFile = path.join(AQUI, 'dados', 'sessao.json'), agora = () => Date.now() } = {}) {
+export function criarServidor({ dataFile = path.join(AQUI, 'dados', 'sessao.json'), agora = () => Date.now(), pastaSimulacao = null, porta = 8787 } = {}) {
   let estado = carregar() ?? novaSessao();
   const aparelhos = new Map(); // id → { pendentes, visto }
 
@@ -69,6 +69,7 @@ export function criarServidor({ dataFile = path.join(AQUI, 'dados', 'sessao.json
 
   const guia = x => ({
     ...publico(), recebidos: estado.votes.length, aparelhos: listaAparelhos(),
+    votos: estado.votes, enderecos: enderecosDaRede().map(ip => `${ip}:${porta}`),
     apuracao: estado.votes.length ? serializar(apurar(estado.groups, estado.votes, x)) : null,
   });
   const serializar = r => ({ ...r, winners: [...r.winners] });
@@ -114,7 +115,28 @@ export function criarServidor({ dataFile = path.join(AQUI, 'dados', 'sessao.json
       salvar();
       return [200, guia(1)];
     },
-    'POST /api/guia/abrir': () => { estado = { ...estado, open: true }; salvar(); return [200, guia(1)]; },
+    'POST /api/guia/abrir': corpo => {
+      // A simulação (guia em HTML) manda a turma e as regras na hora de abrir.
+      if (corpo && Array.isArray(corpo.groups)) {
+        const grupos = validarGrupos(corpo.groups);
+        if (!grupos) return [400, { erro: 'Grupos inválidos.' }];
+        const iguais = JSON.stringify(grupos) === JSON.stringify(estado.groups);
+        if (!iguais && estado.votes.length) return [409, { erro: 'Já há votos com outra turma. Forme os grupos de novo para recomeçar.' }];
+        estado = { ...estado, groups: grupos, noOwn: corpo.noOwn === true ? true : corpo.noOwn === false ? false : estado.noOwn };
+      }
+      estado = { ...estado, open: true }; salvar(); return [200, guia(1)];
+    },
+    'POST /api/guia/limpar': corpo => {
+      // Começa uma votação nova (apaga os votos). Usado quando a guia forma os grupos ou recomeça.
+      let grupos = estado.groups;
+      if (corpo && Array.isArray(corpo.groups)) {
+        grupos = validarGrupos(corpo.groups);
+        if (!grupos) return [400, { erro: 'Grupos inválidos.' }];
+      }
+      estado = { sessao: crypto.randomUUID(), open: false, noOwn: corpo?.noOwn === true, groups: grupos, votes: [] };
+      salvar();
+      return [200, guia(1)];
+    },
     'POST /api/guia/fechar': () => { estado = { ...estado, open: false }; salvar(); return [200, guia(1)]; },
   };
 
@@ -127,9 +149,12 @@ export function criarServidor({ dataFile = path.join(AQUI, 'dados', 'sessao.json
     res.setHeader('Cache-Control', 'no-store');
     if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
-    if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/painel')) {
+    if (req.method === 'GET' && (url.pathname === '/painel' || (url.pathname === '/' && !pastaSimulacao))) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(fs.readFileSync(path.join(AQUI, 'painel.html')));
+    }
+    if ((req.method === 'GET' || req.method === 'HEAD') && pastaSimulacao && !url.pathname.startsWith('/api/')) {
+      return servirArquivo(req, res, pastaSimulacao, url.pathname);
     }
 
     const rota = rotas[`${req.method} ${url.pathname}`];
@@ -161,6 +186,60 @@ export function criarServidor({ dataFile = path.join(AQUI, 'dados', 'sessao.json
   return server;
 }
 
+const SIDES = new Set(['Lia', 'Caio']);
+/** Confere a turma enviada pela guia: ids únicos (L1, C1…), lado, tamanho de 1 a 5 e regra em texto. */
+function validarGrupos(lista) {
+  if (!Array.isArray(lista) || lista.length < 2 || lista.length > 20) return null;
+  const vistos = new Set();
+  const grupos = [];
+  for (const g of lista) {
+    if (!g || typeof g.id !== 'string' || !/^[A-Za-z0-9]{1,8}$/.test(g.id) || vistos.has(g.id)) return null;
+    if (!SIDES.has(g.side) || !Number.isInteger(g.size) || g.size < 1 || g.size > 5) return null;
+    vistos.add(g.id);
+    grupos.push({ id: g.id, side: g.side, size: g.size, rule: typeof g.rule === 'string' ? g.rule.trim().slice(0, MAX_REGRA) : '' });
+  }
+  return grupos;
+}
+
+const TIPOS = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.gif': 'image/gif',
+  '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.m4a': 'audio/mp4', '.mp4': 'video/mp4', '.webm': 'video/webm',
+  '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf',
+};
+
+/** Serve a pasta da simulação (guia + telão). A raiz abre a primeira página .html da pasta. */
+function servirArquivo(req, res, pasta, caminho) {
+  const raiz = path.resolve(pasta);
+  let rel = decodeURIComponent(caminho);
+  if (rel === '/' || rel === '') {
+    const html = fs.readdirSync(raiz).filter(n => n.toLowerCase().endsWith('.html')).sort((a, b) => (b.startsWith('ABRIR') - a.startsWith('ABRIR')) || a.localeCompare(b))[0];
+    if (!html) return responder(res, 404, { erro: 'Nenhuma página .html na pasta da simulação.' });
+    rel = '/' + html;
+  }
+  const alvo = path.resolve(raiz, '.' + rel);
+  if (alvo !== raiz && !alvo.startsWith(raiz + path.sep)) return responder(res, 403, { erro: 'Fora da pasta.' });
+  let info;
+  try { info = fs.statSync(alvo); } catch { return responder(res, 404, { erro: 'Arquivo não encontrado.' }); }
+  if (!info.isFile()) return responder(res, 404, { erro: 'Arquivo não encontrado.' });
+  const tipo = TIPOS[path.extname(alvo).toLowerCase()] ?? 'application/octet-stream';
+  const intervalo = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
+  if (intervalo && (intervalo[1] || intervalo[2])) {
+    // Áudio e vídeo pedem pedaços do arquivo (Range); sem isso o Chrome não deixa voltar ou avançar.
+    let ini = intervalo[1] ? Number(intervalo[1]) : info.size - Number(intervalo[2]);
+    let fim = intervalo[1] && intervalo[2] ? Number(intervalo[2]) : info.size - 1;
+    ini = Math.max(0, ini); fim = Math.min(info.size - 1, fim);
+    if (ini > fim) { res.writeHead(416, { 'Content-Range': `bytes */${info.size}` }); return res.end(); }
+    res.writeHead(206, { 'Content-Type': tipo, 'Content-Length': fim - ini + 1, 'Content-Range': `bytes ${ini}-${fim}/${info.size}`, 'Accept-Ranges': 'bytes' });
+    if (req.method === 'HEAD') return res.end();
+    return fs.createReadStream(alvo, { start: ini, end: fim }).pipe(res);
+  }
+  res.writeHead(200, { 'Content-Type': tipo, 'Content-Length': info.size, 'Accept-Ranges': 'bytes' });
+  if (req.method === 'HEAD') return res.end();
+  fs.createReadStream(alvo).pipe(res);
+}
+
 function responder(res, status, dados) {
   if (res.writableEnded) return;
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -175,9 +254,19 @@ function enderecosDaRede() {
 // Execução direta (não nos testes).
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const porta = Number(process.env.PORTA) || 8787;
-  criarServidor().listen(porta, '0.0.0.0', () => {
+  const pastaSimulacao = process.argv[2] ? path.resolve(process.argv[2]) : null;
+  if (pastaSimulacao && !fs.existsSync(pastaSimulacao)) {
+    console.error(`\nNão achei a pasta da simulação: ${pastaSimulacao}\n`);
+    process.exit(1);
+  }
+  criarServidor({ pastaSimulacao, porta }).listen(porta, '0.0.0.0', () => {
     console.log('\nUrna do Plenário: servidor ligado.\n');
-    console.log(`  Painel da guia (neste PC):  http://localhost:${porta}`);
+    if (pastaSimulacao) {
+      console.log(`  Simulação (guia + telão), abra no Chrome:  http://localhost:${porta}`);
+      console.log(`  Painel técnico da urna:                    http://localhost:${porta}/painel`);
+    } else {
+      console.log(`  Painel da guia (neste PC):  http://localhost:${porta}`);
+    }
     const ips = enderecosDaRede();
     if (ips.length) {
       console.log('\n  Endereço para digitar no tablet:');
