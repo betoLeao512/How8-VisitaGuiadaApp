@@ -1,37 +1,39 @@
-export type DossierId = 'PEDESTRES' | 'VEICULOS' | 'LEGISLACAO' | 'FISCALIZACAO';
+/*
+ * Formação dos grupos da atividade do Plenário (mesma regra da simulação 3).
+ * Este arquivo não importa nada: o servidorzinho do PC (Node 24) também o usa diretamente.
+ */
+export type Side = 'Lia' | 'Caio';
 
-export type InvestigationGroup = {
+export type VotingGroup = {
+  /** Nome que a turma vê: L1, L2… (lado da Lia) e C1, C2… (lado do Caio). */
   id: string;
+  side: Side;
   size: number;
-  dossierIds: DossierId[];
 };
 
-const DOSSIER_IDS: readonly DossierId[] = [
-  'PEDESTRES', 'VEICULOS', 'LEGISLACAO', 'FISCALIZACAO',
-];
+export const MIN_ALUNOS = 4;
+export const MAX_ALUNOS = 40;
+const MAX_POR_GRUPO = 5;
 
-/** Forms independent, balanced groups; accepts no coercion of external input. */
-export function formGroups(studentCount: unknown): InvestigationGroup[] {
+/** Menor número de grupos de até 5 (mínimo 2), tamanhos equilibrados, os maiores primeiro. */
+export function formGroups(studentCount: unknown): VotingGroup[] {
   if (typeof studentCount !== 'number') {
-    throw new TypeError('A quantidade de estudantes deve ser um número entre 9 e 31.');
+    throw new TypeError(`A quantidade de alunos deve ser um número de ${MIN_ALUNOS} a ${MAX_ALUNOS}.`);
   }
-  if (!Number.isInteger(studentCount) || studentCount < 9 || studentCount > 31) {
-    throw new RangeError('Informe uma quantidade inteira de estudantes entre 9 e 31.');
+  if (!Number.isInteger(studentCount) || studentCount < MIN_ALUNOS || studentCount > MAX_ALUNOS) {
+    throw new RangeError(`Informe uma quantidade inteira de alunos de ${MIN_ALUNOS} a ${MAX_ALUNOS}.`);
   }
 
-  const groupCount = Math.ceil(studentCount / 5);
+  const groupCount = Math.max(2, Math.ceil(studentCount / MAX_POR_GRUPO));
   const baseSize = Math.floor(studentCount / groupCount);
   const extraStudents = studentCount % groupCount;
-  const groups: InvestigationGroup[] = Array.from({ length: groupCount }, (_, index) => ({
-    id: String.fromCharCode(65 + index),
-    size: baseSize + (index < extraStudents ? 1 : 0),
-    dossierIds: [],
-  }));
 
-  // Cover all four dossiers for small classes; repeat them circularly for larger ones.
-  for (let index = 0; index < Math.max(groupCount, DOSSIER_IDS.length); index++) {
-    groups[index % groupCount].dossierIds.push(DOSSIER_IDS[index % DOSSIER_IDS.length]);
-  }
-
-  return groups;
+  return Array.from({ length: groupCount }, (_, index) => {
+    const side: Side = index % 2 === 0 ? 'Lia' : 'Caio';
+    return {
+      id: `${side === 'Lia' ? 'L' : 'C'}${Math.floor(index / 2) + 1}`,
+      side,
+      size: baseSize + (index < extraStudents ? 1 : 0),
+    };
+  });
 }

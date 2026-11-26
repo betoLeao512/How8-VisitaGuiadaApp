@@ -1,0 +1,11 @@
+Fase REFACTOR — DEV-URNA-02
+Node: v22.23.5
+Revisão: nomes, duplicação e comentários revisados; regra mantida. Os testes não mudaram desde o GREEN:
+sha256 dos testes: 19412a13a90c37f60ec76f3c79de2ce323572ad1f8875b631b2c67333c0e9935
+
+=== Suíte Jest completa ===
+Test Suites: 5 passed, 5 total
+Tests:       141 passed, 141 total
+
+=== TypeScript ===
+tsc --noEmit: sem erros

@@ -1,0 +1,11 @@
+Fase GREEN — DEV-URNA-03
+Node: v22.23.5
+Comando: node node_modules/jest/bin/jest.js --runInBand --watch=false --watchman=false --no-cache src/domain/fila.test.ts
+sha256 dos testes: 23fa4dede5c6f812d292592fb5cf3b23acefad1f06c72e7f7edd7f21ea4efff6
+
+Test Suites: 1 passed, 1 total
+Tests:       10 passed, 10 total
+Snapshots:   0 total
+Time:        1.458 s
+Ran all test suites matching src/domain/fila.test.ts.
+Código de saída: 0

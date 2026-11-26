@@ -1,0 +1,172 @@
+Fase RED — DEV-URNA-03 (fila offline do tablet)
+Node: v22.23.5
+Comando: node node_modules/jest/bin/jest.js --runInBand --watch=false --watchman=false --no-cache src/domain/fila.test.ts
+fila.ts: esqueleto com assinaturas, sem regra
+
+FAIL src/domain/fila.test.ts
+  ● contagemLocal: o que o PC já recebeu + o que está guardado no tablet › soma a contagem do PC com os votos pendentes de cada grupo
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:5:115)
+      at Object.<anonymous> (src/domain/fila.test.ts:17:25)
+
+  ● contagemLocal: o que o PC já recebeu + o que está guardado no tablet › sem contagem do PC (tablet nunca conectou nesta votação) usa zero
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:5:115)
+      at Object.<anonymous> (src/domain/fila.test.ts:22:25)
+
+  ● gruposCheiosLocal: caso 3, votos offline contam no limite › grupo fica "todos já votaram" quando PC + pendentes atingem o tamanho
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:6:108)
+      at Object.<anonymous> (src/domain/fila.test.ts:28:29)
+
+  ● gruposCheiosLocal: caso 3, votos offline contam no limite › só com votos offline (Wi-Fi caiu desde o começo) o grupo também trava
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:6:108)
+      at Object.<anonymous> (src/domain/fila.test.ts:32:29)
+
+  ● gruposCheiosLocal: caso 3, votos offline contam no limite › abaixo do tamanho, ninguém trava
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:6:108)
+      at Object.<anonymous> (src/domain/fila.test.ts:36:29)
+
+  ● aplicarRespostas: o que fazer com a resposta do PC › ACEITO e DUPLICADO saem da fila (o PC já tem o voto)
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:7:138)
+      at Object.<anonymous> (src/domain/fila.test.ts:48:31)
+
+  ● aplicarRespostas: o que fazer com a resposta do PC › RECUSADO sai da fila e é relatado, para o tablet avisar a guia
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:7:138)
+      at Object.<anonymous> (src/domain/fila.test.ts:54:31)
+
+  ● aplicarRespostas: o que fazer com a resposta do PC › voto sem resposta (conexão caiu no meio) continua guardado, na mesma ordem
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:7:138)
+      at Object.<anonymous> (src/domain/fila.test.ts:60:31)
+
+  ● aplicarRespostas: o que fazer com a resposta do PC › resposta para um id que não está na fila é ignorada
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:7:138)
+      at Object.<anonymous> (src/domain/fila.test.ts:65:31)
+
+  ● aplicarRespostas: o que fazer com a resposta do PC › não altera a fila recebida
+
+    não implementado
+
+      2 | import type { GrupoUrna, ResultadoVoto, Recusa, Voto } from './urna';
+      3 | export type RespostaEnvio = { id: string; result: ResultadoVoto };
+    > 4 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      5 | export const contagemLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Record<string, number> => nao();
+      6 | export const gruposCheiosLocal = (_g: GrupoUrna[], _s: Record<string, number>, _p: Voto[]): Set<string> => nao();
+      7 | export const aplicarRespostas = (_p: Voto[], _r: RespostaEnvio[]): { pendentes: Voto[]; recusados: { voto: Voto; reason: Recusa }[] } => nao();
+
+      at nao (src/domain/fila.ts:4:34)
+      at nao (src/domain/fila.ts:7:138)
+      at Object.<anonymous> (src/domain/fila.test.ts:72:21)
+
+Test Suites: 1 failed, 1 total
+Tests:       10 failed, 10 total
+Snapshots:   0 total
+Time:        1.352 s
+Ran all test suites matching src/domain/fila.test.ts.
+Código de saída: 1

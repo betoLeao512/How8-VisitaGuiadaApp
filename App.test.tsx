@@ -1,272 +1,266 @@
 import { act } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
 import { createRoot, type Root, type TestInstance } from 'test-renderer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import App from './App';
+import { registrarVoto, contagemPorGrupo, totalAlunos, type SessaoUrna } from './src/domain/urna';
 
-// Only the native touch surface is replaced. App, React hooks, clock decisions,
-// score calculation, and rendered result remain the production implementation.
+/*
+ * Testes de tela da urna. O "PC da guia" é falso, mas usa a regra de votos verdadeira
+ * (registrarVoto), então estes testes exercitam tablet + regra juntos.
+ */
+
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 jest.mock('react-native', () => {
   const native = jest.requireActual('react-native');
   const React = jest.requireActual('react');
   return Object.create(native, {
     Pressable: {
-      value: (props: { children?: React.ReactNode | ((state: { pressed: boolean }) => React.ReactNode) }) =>
-        React.createElement('Pressable', props,
-          typeof props.children === 'function' ? props.children({ pressed: false }) : props.children),
+      value: (props: { style?: unknown; children?: React.ReactNode }) =>
+        React.createElement('Pressable', { ...props, style: undefined }, props.children),
     },
   });
 });
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 
-const START = new Date('2026-01-01T12:00:00Z').getTime();
+const BASE = 'http://192.168.0.10:8787';
+
+// ---------- PC falso ----------
+let pc: SessaoUrna & { sessao: string };
+let redeLigada: boolean;
+let envios: { votos: { id: string; group: string; rule: string }[] }[];
+
+function novoPc(parcial: Partial<SessaoUrna & { sessao: string }> = {}) {
+  pc = {
+    sessao: 's1', open: true, noOwn: false, votes: [],
+    groups: [
+      { id: 'L1', side: 'Lia', size: 2, rule: 'Faixa só para pedestres' },
+      { id: 'C1', side: 'Caio', size: 1, rule: 'Motos a 10 km/h' },
+    ],
+    ...parcial,
+  };
+}
+
+const resposta = (status: number, corpo: unknown) =>
+  Promise.resolve({ ok: status < 400, status, json: () => Promise.resolve(corpo) } as Response);
+
+function fetchFalso(url: string, init?: RequestInit): Promise<Response> {
+  if (!redeLigada) return Promise.reject(new TypeError('Network request failed'));
+  const caminho = url.replace(BASE, '').split('?')[0];
+  if (caminho === '/api/urna') {
+    return resposta(200, { sessao: pc.sessao, open: pc.open, noOwn: pc.noOwn, groups: pc.groups, contagem: contagemPorGrupo(pc), total: totalAlunos(pc.groups) });
+  }
+  if (caminho === '/api/votos' && init?.method === 'POST') {
+    const corpo = JSON.parse(String(init.body));
+    if (corpo.sessao !== pc.sessao) return resposta(409, { erro: 'SESSAO_DIFERENTE', sessao: pc.sessao });
+    envios.push(corpo);
+    const respostas = corpo.votos.map((v: { id: string }) => {
+      const r = registrarVoto(pc, v);
+      pc = { ...pc, ...r.session };
+      return { id: v.id, result: r.result };
+    });
+    return resposta(200, { respostas });
+  }
+  return resposta(404, {});
+}
+
+// ---------- ajudantes de tela ----------
 let root: Root;
-let stateListener: (state: AppStateStatus) => void;
-let removeStateListener: jest.Mock;
-let intervalSpy: jest.SpyInstance;
-let clearIntervalSpy: jest.SpyInstance;
 
 function textOf(node: TestInstance): string {
-  return node.children.map(child => typeof child === 'string' ? child : textOf(child)).join('');
+  return node.children.map(c => (typeof c === 'string' ? c : textOf(c))).join('');
+}
+const textoDaTela = () => textOf(root.container);
+
+function botao(rotulo: string): TestInstance {
+  const achados = root.container.queryAll(n => n.type === 'Pressable' && n.props.accessibilityLabel === rotulo);
+  expect(achados).toHaveLength(1);
+  return achados[0];
 }
 
-function button(label: string): TestInstance {
-  const matches = root.container.queryAll(node => node.type === 'Pressable'
-    && (node.props.accessibilityLabel === label || textOf(node) === label));
-  expect(matches).toHaveLength(1);
-  return matches[0];
+async function esperar() {
+  await act(async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); });
 }
 
-async function press(label: string) {
-  const control = button(label);
-  expect(control.props.disabled).not.toBe(true);
-  await act(async () => { control.props.onPress(); });
+async function tocar(rotulo: string) {
+  const b = botao(rotulo);
+  expect(b.props.disabled).not.toBe(true);
+  await act(async () => { b.props.onPress(); });
+  await esperar();
 }
 
-async function identify(name = 'Equipe Azul') {
-  await press('Começar');
-  const input = root.container.queryAll(node => node.props.accessibilityLabel === 'Nome do grupo'
-    && typeof node.props.onChangeText === 'function')[0];
-  expect(input).toBeDefined();
-  await act(async () => { input.props.onChangeText(name); });
-  await press('Continuar');
+async function rodada() {
+  await act(async () => { jest.advanceTimersByTime(2000); });
+  await esperar();
 }
 
-async function start(name = 'Equipe Azul') {
-  await identify(name);
-  await press('Iniciar desafio');
+async function abrirApp() {
+  root = createRoot();
+  await act(async () => { root.render(<App />); });
+  await esperar();
 }
 
-function expectRemaining(seconds: number) {
-  expect(root.container.queryAll(node =>
-    node.props.accessibilityLabel === `${seconds} segundos restantes`)).toHaveLength(1);
-}
-
-function expectResult(title: string, answer: string, score: number, group = 'Equipe Azul') {
-  const text = textOf(root.container);
-  expect(text).toContain(title);
-  expect(text).toContain(`Grupo: ${group}`);
-  expect(text).toContain(`Resposta: ${answer}`);
-  expect(root.container.queryAll(node => node.type === 'Text' && textOf(node) === String(score)))
-    .toHaveLength(1);
-  expect(button('Reiniciar')).toBeDefined();
-  expect(root.container.queryAll(node => node.props.accessibilityLabel === 'Legislativo')).toHaveLength(0);
-}
-
-async function advance(ms: number) {
-  await act(async () => { jest.advanceTimersByTime(ms); });
-}
-
-async function changeAppState(state: AppStateStatus) {
-  await act(async () => { stateListener(state); });
+async function votar(grupo: string, regra: string) {
+  await tocar('Estou pronto');
+  await tocar(`Grupo ${grupo}`);
+  await tocar(`Regra do grupo ${regra}`);
+  await tocar('Confirmar meu voto');
 }
 
 beforeEach(async () => {
-  jest.useFakeTimers({ now: START });
-  intervalSpy = jest.spyOn(globalThis, 'setInterval');
-  clearIntervalSpy = jest.spyOn(globalThis, 'clearInterval');
-  removeStateListener = jest.fn();
-  jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, listener) => {
-    stateListener = listener;
-    return { remove: removeStateListener };
-  });
-  root = createRoot();
-  await act(async () => { root.render(<App />); });
+  jest.useFakeTimers();
+  await AsyncStorage.clear();
+  novoPc();
+  redeLigada = true;
+  envios = [];
+  jest.spyOn(globalThis, 'fetch').mockImplementation(fetchFalso as typeof fetch);
 });
 
 afterEach(async () => {
-  await act(async () => { root.unmount(); });
+  await act(async () => { root?.unmount(); });
   jest.clearAllTimers();
   jest.restoreAllMocks();
   jest.useRealTimers();
 });
 
-describe('baseline: respostas, prazo absoluto e pontuação exibida', () => {
-  test.each([
-    ['Legislativo', 'Resposta correta!', 100],
-    ['Executivo', 'Resposta incorreta', 0],
-    ['Judiciário', 'Resposta incorreta', 0],
-  ])('%s mantém alternativa, resultado e pontos consistentes', async (answer, title, score) => {
-    await start();
-    await press(answer);
-    expectResult(title, answer, score);
-  });
+async function appConectado() {
+  await AsyncStorage.setItem('urna:servidor', BASE);
+  await abrirApp();
+}
 
-  test('inicia com 30 segundos e só encerra ao atingir 30.000 ms', async () => {
-    await start();
-    expectRemaining(30);
-    await advance(29_000);
-    expectRemaining(1);
-    await advance(999);
-    expectRemaining(1);
-    await advance(1);
-    expectResult('Tempo esgotado', 'tempo esgotado', 0);
-  });
+describe('primeiro uso: endereço do PC', () => {
+  test('pede o endereço, recusa texto inválido e conecta com o endereço digitado', async () => {
+    await abrirApp();
+    expect(textoDaTela()).toContain('Endereço do PC da guia');
+    const campo = root.container.queryAll(n => n.props.accessibilityLabel === 'Endereço do PC da guia' && typeof n.props.onChangeText === 'function')[0];
 
-  test('espera na preparação não consome o prazo do desafio', async () => {
-    await identify();
-    await advance(60_000);
-    expect(intervalSpy).not.toHaveBeenCalled();
-    await press('Iniciar desafio');
-    expectRemaining(30);
-    await advance(29_999);
-    await press('Legislativo');
-    expectResult('Resposta correta!', 'Legislativo', 100);
-  });
+    await act(async () => { campo.props.onChangeText('isso não é endereço'); });
+    await tocar('Conectar');
+    expect(textoDaTela()).toContain('Endereço inválido');
 
-  test('aceita resposta correta em 29.999 ms', async () => {
-    await start();
-    jest.setSystemTime(START + 29_999);
-    await press('Legislativo');
-    expectResult('Resposta correta!', 'Legislativo', 100);
-  });
-
-  test.each([30_000, 30_001, 45_000])('rejeita resposta em %i ms mesmo sem tick prévio', async elapsed => {
-    await start();
-    jest.setSystemTime(START + elapsed);
-    // setSystemTime changes Date.now without delivering the interval: the handler
-    // must enforce the absolute deadline even while the visible counter is stale.
-    expectRemaining(30);
-    await press('Legislativo');
-    expectResult('Tempo esgotado', 'tempo esgotado', 0);
-  });
-
-  test('resposta antes do prazo continua definitiva após avanço do relógio', async () => {
-    await start();
-    await advance(29_000);
-    await press('Legislativo');
-    await advance(60_000);
-    expectResult('Resposta correta!', 'Legislativo', 100);
-  });
-
-  test.each([
-    ['Legislativo', 'Executivo', 'Resposta correta!', 100],
-    ['Executivo', 'Legislativo', 'Resposta incorreta', 0],
-    ['Legislativo', 'Legislativo', 'Resposta correta!', 100],
-  ])('toques no mesmo lote: %s depois %s preservam a primeira conclusão', async (first, second, title, score) => {
-    await start();
-    const onFirst = button(first).props.onPress;
-    const onSecond = button(second).props.onPress;
-    await act(async () => { onFirst(); onSecond(); });
-    expectResult(title, first, score);
-  });
-
-  test.each(['resposta primeiro', 'temporizador primeiro'])('no prazo: %s resulta em timeout único', async order => {
-    await start();
-    const onAnswer = button('Legislativo').props.onPress;
-    if (order === 'resposta primeiro') {
-      jest.setSystemTime(START + 30_000);
-      await act(async () => { onAnswer(); jest.advanceTimersByTime(1000); });
-    } else {
-      await advance(30_000);
-      await act(async () => { onAnswer(); });
-    }
-    expectResult('Tempo esgotado', 'tempo esgotado', 0);
-  });
-
-  test('toque atrasado após timeout não substitui a conclusão', async () => {
-    await start();
-    const onAnswer = button('Legislativo').props.onPress;
-    await advance(30_000);
-    await advance(5000);
-    await act(async () => { onAnswer(); });
-    expectResult('Tempo esgotado', 'tempo esgotado', 0);
+    await act(async () => { campo.props.onChangeText('192.168.0.10'); });
+    await tocar('Conectar');
+    expect(await AsyncStorage.getItem('urna:servidor')).toBe(BASE);
+    expect(textoDaTela()).toContain('Sua vez de votar');
+    expect(textoDaTela()).toContain('Conectado ao PC da guia');
   });
 });
 
-describe('baseline: reinício e isolamento dos temporizadores', () => {
-  test.each(['Legislativo', 'Executivo', 'timeout'])('reinicia após %s com grupo e resultado limpos', async answer => {
-    await start('Grupo anterior');
-    if (answer === 'timeout') await advance(30_000);
-    else await press(answer);
-    await press('Reiniciar');
-    expect(textOf(root.container)).toContain('Visita Cidadã');
-    expect(textOf(root.container)).not.toContain('Grupo anterior');
-    expect(root.container.queryAll(node => node.type === 'Pressable'
-      && textOf(node) === 'Reiniciar')).toHaveLength(0);
-    await press('Começar');
-    const input = root.container.queryAll(node => node.props.accessibilityLabel === 'Nome do grupo'
-      && typeof node.props.onChangeText === 'function')[0];
-    expect(input.props.value).toBe('');
-    expect(button('Continuar').props.disabled).toBe(true);
-    expect(intervalSpy).toHaveBeenCalledTimes(1);
-    expect(clearIntervalSpy).toHaveBeenCalledWith(intervalSpy.mock.results[0].value);
+describe('votação com rede', () => {
+  test('urna fechada até a guia abrir', async () => {
+    novoPc({ open: false });
+    await appConectado();
+    expect(textoDaTela()).toContain('Urna fechada');
+    pc = { ...pc, open: true };
+    await rodada();
+    expect(textoDaTela()).toContain('Sua vez de votar');
   });
 
-  test('prazo anterior não encerra o novo desafio, que recebe 30 segundos completos', async () => {
-    await start('Grupo anterior');
-    await advance(5000);
-    await press('Executivo');
-    await press('Reiniciar');
-    await start('Grupo novo');
-    expectRemaining(30);
-    await advance(25_000); // Deadline of the previous challenge, not of this one.
-    expectRemaining(5);
-    expect(textOf(root.container)).not.toContain('RESULTADO DA VISITA');
-    await advance(4999);
-    expectRemaining(1);
-    await advance(1);
-    expectResult('Tempo esgotado', 'tempo esgotado', 0, 'Grupo novo');
+  test('fluxo completo: pronto → grupo → regra → confirmar; o voto chega ao PC e a tela não mostra a escolha', async () => {
+    await appConectado();
+    await votar('L1', 'C1');
+    expect(textoDaTela()).toContain('Voto guardado');
+    expect(textoDaTela()).not.toContain('Motos a 10 km/h');
+    expect(pc.votes).toHaveLength(1);
+    expect(pc.votes[0]).toMatchObject({ group: 'L1', rule: 'C1' });
+    await tocar('Próxima pessoa');
+    expect(textoDaTela()).toContain('Sua vez de votar');
   });
 
-  test.each(['Legislativo', 'Executivo', 'timeout'])('conclusão por %s cancela intervalo e listener', async answer => {
-    await start();
-    expect(intervalSpy).toHaveBeenCalledTimes(1);
-    expect(intervalSpy.mock.calls[0][1]).toBe(1000);
-    expect(clearIntervalSpy).not.toHaveBeenCalled();
-    if (answer === 'timeout') await advance(30_000);
-    else await press(answer);
-    expect(intervalSpy).toHaveBeenCalledTimes(1);
-    expect(clearIntervalSpy).toHaveBeenCalledWith(intervalSpy.mock.results[0].value);
-    expect(removeStateListener).toHaveBeenCalledTimes(1);
+  test('"Confirmar meu voto" só funciona depois de escolher uma regra', async () => {
+    await appConectado();
+    await tocar('Estou pronto');
+    await tocar('Grupo L1');
+    expect(botao('Confirmar meu voto').props.disabled).toBe(true);
   });
 
-  test('desmontagem durante o desafio cancela intervalo e listener', async () => {
-    await start();
+  test('grupo completo aparece riscado como "todos já votaram" e não pode ser escolhido', async () => {
+    await appConectado();
+    await votar('C1', 'L1'); // C1 tem 1 integrante
+    await tocar('Próxima pessoa');
+    await tocar('Estou pronto');
+    expect(botao('Grupo C1, todos já votaram').props.disabled).toBe(true);
+    expect(textoDaTela()).toContain('todos já votaram');
+  });
+
+  test('com "proibir voto na própria regra", a regra do próprio grupo fica desabilitada', async () => {
+    novoPc({ noOwn: true });
+    await appConectado();
+    await tocar('Estou pronto');
+    await tocar('Grupo L1');
+    expect(botao('Regra do grupo L1').props.disabled).toBe(true);
+    expect(textoDaTela()).toContain('Não vale votar na regra do seu próprio grupo');
+  });
+
+  test('quando todos votam, o tablet pede para ser devolvido', async () => {
+    await appConectado();
+    await votar('L1', 'C1'); await tocar('Próxima pessoa');
+    await votar('L1', 'L1'); await tocar('Próxima pessoa');
+    await votar('C1', 'L1'); await tocar('Próxima pessoa');
+    expect(textoDaTela()).toContain('Todos votaram');
+  });
+});
+
+describe('sem rede (Wi-Fi caiu)', () => {
+  test('o voto fica guardado no tablet, conta no limite e é enviado quando a rede volta', async () => {
+    await appConectado();
+    redeLigada = false;
+    await rodada();
+    expect(textoDaTela()).toContain('Sem rede');
+
+    await votar('C1', 'L1');
+    expect(textoDaTela()).toContain('1 voto guardado aguardando envio');
+    expect(pc.votes).toHaveLength(0);
+
+    // O voto guardado já conta: C1 (1 integrante) aparece completo mesmo sem rede.
+    await tocar('Próxima pessoa');
+    await tocar('Estou pronto');
+    expect(botao('Grupo C1, todos já votaram').props.disabled).toBe(true);
+
+    redeLigada = true;
+    await rodada();
+    expect(pc.votes).toHaveLength(1);
+    expect(textoDaTela()).toContain('Conectado ao PC da guia');
+    expect(textoDaTela()).not.toContain('aguardando envio');
+  });
+
+  test('votos guardados sobrevivem ao App ser fechado e reaberto', async () => {
+    await appConectado();
+    redeLigada = false;
+    await rodada();
+    await votar('L1', 'C1');
     await act(async () => { root.unmount(); });
-    expect(intervalSpy).toHaveBeenCalledTimes(1);
-    expect(clearIntervalSpy).toHaveBeenCalledWith(intervalSpy.mock.results[0].value);
-    expect(removeStateListener).toHaveBeenCalledTimes(1);
-  });
-});
 
-describe('baseline: retorno do segundo plano respeita prazo absoluto', () => {
-  test('retorno antes do prazo recalcula o restante sem conceder mais tempo', async () => {
-    await start();
-    await changeAppState('background');
-    jest.setSystemTime(START + 12_500);
-    await changeAppState('active');
-    expectRemaining(18);
-    jest.setSystemTime(START + 30_000);
-    await changeAppState('active');
-    expectResult('Tempo esgotado', 'tempo esgotado', 0);
+    redeLigada = true;
+    await abrirApp();
+    expect(pc.votes).toHaveLength(1);
   });
 
-  test.each([30_000, 45_000])('retorno em %i ms encerra imediatamente', async elapsed => {
-    await start();
-    await changeAppState('background');
-    jest.setSystemTime(START + elapsed);
-    await changeAppState('active');
-    expectResult('Tempo esgotado', 'tempo esgotado', 0);
+  test('voto recusado pelo PC (grupo completo por outro tablet) gera aviso para chamar a guia', async () => {
+    await appConectado();
+    redeLigada = false;
+    await rodada();
+    await votar('C1', 'L1');
+    // Enquanto este tablet estava sem rede, outro tablet já completou o C1.
+    pc = { ...pc, votes: [{ id: 'outro-tablet-1', group: 'C1', rule: 'C1' }] };
+    redeLigada = true;
+    await rodada();
+    expect(textoDaTela()).toContain('1 voto não foi aceito pelo PC: o grupo escolhido já estava completo');
+    await tocar('Entendi');
+    expect(textoDaTela()).not.toContain('não foi aceito');
+  });
+
+  test('votos de uma votação anterior não entram na nova turma', async () => {
+    await appConectado();
+    redeLigada = false;
+    await rodada();
+    await votar('L1', 'C1');
+    novoPc({ sessao: 's2' });
+    redeLigada = true;
+    await rodada();
+    expect(envios).toHaveLength(0);
+    expect(pc.votes).toHaveLength(0);
+    expect(textoDaTela()).toContain('eram de uma votação anterior');
   });
 });
