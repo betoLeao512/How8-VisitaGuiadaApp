@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel da urna</title>
+<style>
+  :root { --ink: #1d1b2f; --muted: #5d5a73; --line: #d9d5e6; --bg: #f6f4fb; --card: #fff;
+          --lia: #e8742c; --caio: #2a6fdb; --ok: #1f8a4c; --warn: #b3261e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.45 system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+  main { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; display: grid; gap: 16px; }
+  h1 { margin: 0; font-size: 1.6rem; }
+  h2 { margin: 0 0 8px; font-size: 1.1rem; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .muted { color: var(--muted); font-size: .92rem; }
+  button { font: 600 1rem system-ui, sans-serif; border-radius: 10px; border: 2px solid var(--ink); background: var(--ink); color: #fff; padding: 10px 16px; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--ink); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  input[type=number] { width: 5em; font-size: 1.1rem; padding: 6px; }
+  textarea { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid var(--line); resize: vertical; }
+  .g { display: grid; gap: 4px; margin-bottom: 10px; }
+  .tag { font-weight: 700; } .tag.Lia { color: var(--lia); } .tag.Caio { color: var(--caio); }
+  .big { font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; font-variant-numeric: tabular-nums; }
+  .chip.cheio { border-color: var(--ok); color: var(--ok); font-weight: 700; }
+  .estado { font-weight: 700; } .estado.on { color: var(--ok); } .estado.off { color: var(--warn); }
+  .erro { color: var(--warn); font-weight: 600; }
+  .bar { height: 12px; border-radius: 99px; background: var(--bg); overflow: hidden; }
+  .bar i { display: block; height: 100%; }
+  .trow { display: grid; grid-template-columns: 1fr 3em; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .trow.win span::before { content: "Aprovada · "; color: var(--ok); font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Painel da urna</h1>
+    <p class="muted">Este painel fica só no PC da guia. Os tablets mostram apenas os botões de voto. <span id="conexao"></span></p>
+  </div>
+
+  <section>
+    <h2>1. Turma</h2>
+    <div class="row">
+      <label>Número de alunos <input id="alunos" type="number" min="4" max="40" value="36"></label>
+      <button id="formar">Formar grupos</button>
+      <span class="muted">De 4 a 40 alunos. Grupos de até 5, lados alternados (L1, C1, L2, C2…).</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Regras escritas pelos grupos</h2>
+    <div id="regras"></div>
+    <div class="row">
+      <button id="salvar-regras">Salvar regras</button>
+      <label><input id="noown" type="checkbox"> Proibir voto na própria regra (contra o voto de torcida)</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Votação</h2>
+    <div class="row"><span class="big" id="contador">0 de 0</span><span class="muted">votos recebidos</span>
+      <span style="flex:1"></span>
+      <button id="abrir">Abrir a votação</button>
+      <button id="fechar" class="ghost">Encerrar a votação</button></div>
+    <p class="estado" id="estado-urna"></p>
+    <p class="muted">Votos por grupo (só a contagem, nunca a escolha):</p>
+    <div class="chips" id="por-grupo"></div>
+    <p class="muted" style="margin-top:12px">Aparelhos:</p>
+    <div class="chips" id="aparelhos"></div>
+  </section>
+
+  <section>
+    <h2>4. Apuração</h2>
+    <div class="row">
+      <span>Quantas regras viram lei da turma?</span>
+      <button class="ghost x" data-x="1">1</button><button class="ghost x" data-x="2">2</button><button class="ghost x" data-x="3">3</button>
+      <span style="flex:1"></span>
+      <button id="mostrar" class="ghost">Mostrar resultado neste PC</button>
+    </div>
+    <div id="apuracao" hidden></div>
+  </section>
+  <p class="erro" id="erro"></p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let G = null, x = 1, mostrar = false, editando = false;
+
+async function api(metodo, caminho, corpo) {
+  const r = await fetch(caminho, { method: metodo, headers: { 'Content-Type': 'application/json' }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const dados = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(dados.erro || `Erro ${r.status}`);
+  return dados;
+}
+async function acao(metodo, caminho, corpo) {
+  try { $('erro').textContent = ''; G = await api(metodo, caminho, corpo); render(); }
+  catch (e) { $('erro').textContent = e.message; }
+}
+
+function render() {
+  if (!G) return;
+  const bloqueado = G.open || G.recebidos > 0;
+  if (!editando) {
+    $('regras').innerHTML = G.groups.map(g => `<div class="g"><span class="tag ${g.side}">Grupo ${g.id} · lado ${g.side === 'Lia' ? 'da Lia' : 'do Caio'} · ${g.size} alunos</span>
+      <textarea rows="2" data-g="${g.id}" ${bloqueado ? 'disabled' : ''} placeholder="Regra escrita pelo grupo ${g.id}">${esc(g.rule)}</textarea></div>`).join('');
+  }
+  $('salvar-regras').disabled = bloqueado;
+  $('noown').checked = G.noOwn; $('noown').disabled = bloqueado;
+  $('contador').textContent = `${G.recebidos} de ${G.total}`;
+  $('abrir').disabled = G.open; $('fechar').disabled = !G.open;
+  $('estado-urna').textContent = G.open ? 'Votação aberta: os tablets já podem receber votos.' : 'Votação fechada.';
+  $('estado-urna').className = 'estado ' + (G.open ? 'on' : 'off');
+  $('por-grupo').innerHTML = G.groups.map(g => { const k = G.contagem[g.id] || 0;
+    return `<span class="chip ${k >= g.size ? 'cheio' : ''}">${g.id}: ${k}/${g.size}${k >= g.size ? ' ✓' : ''}</span>`; }).join('');
+  $('aparelhos').innerHTML = G.aparelhos.length ? G.aparelhos.map(a => `<span class="chip">${esc(a.id)} · ${a.online ? 'conectado' : `sem sinal há ${a.vistoHa} s`}${a.pendentes ? ` · <b>${a.pendentes} guardado(s)</b>` : ''}</span>`).join('')
+    : '<span class="muted">Nenhum tablet conectou ainda.</span>';
+  document.querySelectorAll('.x').forEach(b => { b.style.background = +b.dataset.x === x ? 'var(--ink)' : ''; b.style.color = +b.dataset.x === x ? '#fff' : ''; });
+  $('mostrar').textContent = mostrar ? 'Esconder resultado' : 'Mostrar resultado neste PC';
+  const A = G.apuracao, el = $('apuracao');
+  el.hidden = !mostrar;
+  if (!A) { el.innerHTML = '<p class="muted">Ainda não há votos.</p>'; return; }
+  const max = Math.max(1, ...A.counts.map(c => c.n));
+  el.innerHTML = A.counts.map(c => `<div class="trow ${A.winners.includes(c.id) ? 'win' : ''}"><div><span>Grupo ${c.id}: ${esc(c.rule || '(sem texto)')}</span>
+    <div class="bar"><i style="width:${100 * c.n / max}%;background:var(--${c.side === 'Lia' ? 'lia' : 'caio'})"></i></div></div><b>${c.n}</b></div>`).join('')
+    + `<p class="muted">${A.caio.pct}% do lado do Caio votou numa regra da Lia · ${A.lia.pct}% do lado da Lia votou numa regra do Caio · ${A.outsidePct}% votou numa regra de outro grupo.</p>`;
+}
+
+async function atualizar() {
+  try { G = await api('GET', `/api/guia?x=${x}`); $('conexao').textContent = ''; render(); }
+  catch { $('conexao').textContent = 'Servidor desligado? Verifique a janela do terminal.'; }
+}
+
+$('formar').onclick = () => {
+  const n = parseInt($('alunos').value, 10);
+  const confirmar = !G?.recebidos || confirm('Já há votos nesta votação. Apagar tudo e formar novos grupos?');
+  if (confirmar) acao('POST', '/api/guia/turma', { alunos: n, confirmar: true });
+};
+$('regras').addEventListener('focusin', () => { editando = true; });
+$('regras').addEventListener('focusout', () => { editando = false; });
+$('salvar-regras').onclick = () => {
+  const regras = {};
+  document.querySelectorAll('textarea[data-g]').forEach(t => { regras[t.dataset.g] = t.value; });
+  editando = false;
+  acao('POST', '/api/guia/regras', { regras });
+};
+$('noown').onchange = e => acao('POST', '/api/guia/proibir-propria', { valor: e.target.checked });
+$('abrir').onclick = () => acao('POST', '/api/guia/abrir');
+$('fechar').onclick = () => acao('POST', '/api/guia/fechar');
+document.querySelectorAll('.x').forEach(b => b.onclick = () => { x = +b.dataset.x; atualizar(); });
+$('mostrar').onclick = () => { mostrar = !mostrar; render(); };
+atualizar();
+setInterval(atualizar, 1500);
+</script>
+</body>
+</html>
