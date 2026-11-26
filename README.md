@@ -1,156 +1,116 @@
-# HOW8 — Visita Cidadã
+# HOW8 — Visita Cidadã · Urna do Plenário
 
-Protótipo acadêmico de aplicativo para apoiar experiências educativas no contexto das visitas guiadas à Câmara de Vereadores de Itajaí. A proposta é aproximar os visitantes do funcionamento do Poder Legislativo por meio de uma interação em grupo e de um desafio de conhecimento.
+Aplicativo acadêmico usado nas visitas guiadas à Câmara de Vereadores de Itajaí. Na atividade **Plenário em Jogo**, a turma discute um caso na Rua Hercílio Luz, cada grupo escreve uma regra e, no fim, todos votam em segredo. **Este App é a urna.** O tablet passa de mão em mão, e cada aluno escolhe o próprio grupo e a regra em que vota. O voto vai pela rede Wi-Fi para o PC da guia.
 
-> **Nomenclatura:** Visita Cidadã é o nome do produto; HOW8 identifica o projeto acadêmico. `HOW8-App` e `how8-app` são identificadores técnicos, e `How8-VisitaGuiadaApp` é o nome do repositório GitHub. A descrição oficial do produto é **Aplicativo educacional para visitas guiadas ao Poder Legislativo**.
+> **Nomenclatura:** Visita Cidadã é o nome do produto; HOW8 identifica o projeto acadêmico. `HOW8-App` e `how8-app` são identificadores técnicos, e `How8-VisitaGuiadaApp` é o nome do repositório GitHub.
 
-## Estado atual
+## Como as peças se encaixam
 
-Protótipo funcional desenvolvido na **Etapa 1 do HOW8**. O fluxo permite iniciar uma visita, identificar o grupo, responder a um desafio com limite de tempo, consultar o resultado e reiniciar a experiência.
+```
+ Tablets (este App)  ──Wi-Fi──▶  PC da guia: servidorzinho (servidor/)  ◀──  painel da guia (navegador do PC)
+ Android, iPad, iPhone            guarda os votos e aplica a regra            abre/encerra, vê contagem e apuração
+```
 
-A implementação atual concentra a interface em `App.tsx` e mantém a regra de pontuação separada em `src/domain/score.ts`. A Etapa 2 deverá evoluir esse ponto de partida para o MVP; as evoluções previstas ainda não fazem parte das funcionalidades implementadas.
+- **Guia e Telão** da atividade continuam em HTML (simulação 3), fora deste repositório.
+- O **servidorzinho** é um programa Node sem nenhuma biblioteca de fora. Ele usa **o mesmo arquivo de regra** que o App (`src/domain/urna.ts`), então o tablet e o PC aplicam a mesma regra.
+- A comparação que ajuda: o tablet é a urna eletrônica da seção, e o PC é a apuração. Cada voto leva um número próprio, então, se a rede falhar no meio e o tablet reenviar, o PC reconhece o voto e não conta duas vezes.
+
+## O que a urna faz
+
+- Telas iguais às da simulação 3: "Urna fechada" → "Sua vez de votar" → "De qual grupo você é?" → "Qual regra você quer para a rua?" → "Voto guardado · Passe o tablet para a próxima pessoa" → "Todos votaram".
+- **Limite por grupo:** um grupo de 5 recebe no máximo 5 votos. Depois disso, o botão aparece riscado como "todos já votaram". A trava é conferida ao escolher o grupo, ao confirmar o voto e de novo no PC.
+- **Sem Wi-Fi, o voto não se perde:** ele fica guardado no tablet, inclusive se o App for fechado, e já conta no limite do grupo. Quando a rede volta, o voto é enviado. A barra do topo mostra "Sem rede · N votos guardados aguardando envio".
+- Se o PC recusar um voto guardado (por exemplo, outro tablet completou o grupo enquanto este estava sem rede), o tablet mostra um aviso para chamar a guia.
+- Opção da guia **"Proibir voto na própria regra"**, contra o voto de torcida.
+- **Sigilo:** o tablet nunca recebe as escolhas, só a contagem por grupo. Depois de confirmado, o voto não aparece na tela.
+- Turma de **4 a 40 alunos**, em grupos de até 5, com no mínimo 2 grupos e lados alternados (L1, C1, L2, C2…).
+
+## Passo a passo no dia da visita
+
+1. **Rede:** ligue o PC e os tablets na **mesma rede Wi-Fi**. O mais seguro é levar um roteador próprio ou usar o roteamento do celular. Redes de órgãos públicos costumam impedir que os aparelhos se enxerguem.
+2. **PC da guia** (precisa do Node 24 e de uma cópia deste repositório com `npm ci` feito):
+   ```sh
+   npm run servidor
+   ```
+   A janela mostra o endereço para digitar no tablet, por exemplo `192.168.0.10:8787`, e o painel em `http://localhost:8787`. Na primeira vez, o Windows pode perguntar se libera a rede para o Node. Responda **Permitir em redes privadas**.
+3. **Painel** (no navegador do PC): informe o número de alunos e toque em "Formar grupos". Digite as regras dos grupos, toque em "Salvar regras" e depois em "Abrir a votação".
+4. **Tablet:** na primeira vez, digite o endereço do PC e toque em "Conectar". No iPad e no iPhone, aceite a permissão de **Rede Local**.
+5. Quando todos votarem, toque em "Encerrar a votação" no painel e use a apuração.
+
+Os votos ficam salvos em `servidor/dados/sessao.json`. Se o PC reiniciar, nada se perde. Essa pasta não vai para o GitHub.
+
+## Gerar o APK e instalar
+
+### Android (APK pelo EAS, na nuvem da Expo)
+
+Precisa de uma conta gratuita em expo.dev.
+
+```sh
+npx eas-cli@latest login
+npx eas-cli@latest build -p android --profile apk
+```
+
+No fim, o EAS mostra um link e um QR code para baixar o `.apk` no tablet. No Android, autorize a "instalação de apps desconhecidos" para o navegador ou o gerenciador de arquivos.
+
+Alternativa local, com Android Studio instalado: `npx expo run:android --variant release`.
+
+### iPad e iPhone
+
+Igual à Etapa 1 (Mac com Xcode, Personal Team gratuito):
+
+```sh
+npx expo prebuild --platform ios
+npx --no-install expo run:ios --configuration Release --device
+```
+
+Atenção: com a conta Apple gratuita, a instalação **vence em 7 dias**. Instale perto da data de uso.
 
 ## Tecnologias
 
-Versões resolvidas no `package-lock.json` e conferidas nas dependências instaladas:
-
 | Tecnologia | Versão |
 | --- | --- |
+| Expo | SDK 58 |
 | React Native | 0.88.1 |
-| Expo | 58.0.23 — SDK 58 |
 | React | 19.3.0 |
 | TypeScript | 6.0.3 |
-| Jest | 30.5.2 |
-| jest-expo | 58.0.14 |
+| Jest / jest-expo | 30.5.2 / 58.0.14 |
+| AsyncStorage | 2.2.0 (votos guardados no tablet) |
+| expo-build-properties | 58.0.x (libera HTTP na rede local no Android) |
+| Node (PC da guia) | 24 LTS |
 
-O `package.json` define os intervalos de versões permitidos; o arquivo de lock registra as versões utilizadas para uma instalação reproduzível.
+## Estrutura
 
-## Funcionalidades implementadas
+| Pasta/arquivo | O que tem |
+| --- | --- |
+| `src/domain/groups.ts` | Formação dos grupos (4 a 40 alunos, L1/C1…) |
+| `src/domain/urna.ts` | Regra de votos e apuração. Usada pelo App **e** pelo servidor |
+| `src/domain/fila.ts` | Fila de votos guardados sem rede |
+| `src/rede/protocolo.ts` | Formato das mensagens entre tablet e PC |
+| `src/urna/` | Conexão com o PC, armazenamento no tablet e o "cérebro" da urna (`useUrna`) |
+| `App.tsx` | Telas da urna |
+| `servidor/` | Servidorzinho do PC, painel da guia e testes |
+| `docs/evidencias-tdd/` | Evidências RED/GREEN/REFACTOR das Etapas 1 e 2 |
 
-- Tela de apresentação e início da experiência.
-- Identificação do grupo com nome obrigatório, remoção de espaços nas extremidades e limite de 80 caracteres.
-- Tela de preparação para iniciar o desafio.
-- Um desafio de múltipla escolha sobre o Poder ao qual pertence a Câmara de Vereadores, com três alternativas.
-- Temporizador de 30 segundos e encerramento por tempo esgotado.
-- Registro da primeira resposta válida e apresentação do resultado: correta, incorreta ou tempo esgotado.
-- Pontuação de **100 pontos por resposta correta** e **0 pontos por resposta incorreta ou tempo esgotado**.
-- Reinício com limpeza do nome do grupo, do resultado e do temporizador.
-
-Nome, resposta e pontuação permanecem somente em memória durante a execução. A aplicação não salva histórico de visitas.
-
-## Como executar
-
-### Requisitos
-
-- Git para obter o repositório.
-- Node.js **24 LTS, a partir de 24.3.0 na série 24.x**, com npm. Essa faixa atende aos requisitos declarados pelas versões instaladas de Expo e React Native.
-- Um ambiente compatível para abrir o aplicativo: Android Emulator, iOS Simulator no macOS ou Expo Go compatível com o SDK 58.
-
-O Android Emulator requer configuração do Android Studio; o iOS Simulator requer macOS e Xcode. A versão Release foi validada em iPhone 8 Plus com iOS 16.7.16; isso não representa validação das demais plataformas.
-
-### Instalação
+## Testes
 
 ```sh
-git clone https://github.com/betoLeao512/How8-VisitaGuiadaApp.git HOW8-App
-cd HOW8-App
-npm ci
+npm test                 # Jest: 141 testes (regra, fila, protocolo e telas)
+npm run test:servidor    # servidorzinho: 10 testes por HTTP
+npx tsc --noEmit         # tipos
 ```
 
-Se o repositório já estiver clonado, execute `npm ci` em sua raiz, onde estão `package.json` e `App.tsx`. Use o lock existente para manter as versões registradas.
-
-### Inicialização
-
-```sh
-npm start
-```
-
-Esse script executa `expo start`. Com o servidor de desenvolvimento ativo, use as opções do terminal para abrir um emulador/simulador ou escanear o QR code com uma versão compatível do Expo Go. Em dispositivo físico, computador e aparelho precisam de conectividade entre si.
-
-Também estão disponíveis os scripts de compilação e execução nativa por plataforma:
-
-```sh
-npm run android
-npm run ios
-```
-
-Eles executam `expo run:android` e `expo run:ios`, respectivamente, e dependem das ferramentas nativas da plataforma. Podem gerar os diretórios nativos quando ausentes e compilar o aplicativo; por padrão, utilizam configuração de desenvolvimento e Metro. A existência desses scripts não representa validação do aplicativo em todas as plataformas.
-
-### Compilação iOS Release e validação física
-
-O identificador iOS é `com.how8.visitacidada`. O ambiente utilizado foi Node.js 24.16.0, macOS Tahoe 26.7.2, Xcode 26.4.1 e CocoaPods 1.17.0. Para compilar e instalar em um iPhone conectado, após configurar a assinatura local no Xcode:
-
-```sh
-npx --no-install expo run:ios --configuration Release --device --no-bundler --no-install
-```
-
-Esse comando pressupõe que o projeto iOS já foi gerado e os Pods estão instalados. Use Node 24 também nos scripts do Xcode. A configuração Release incorpora JavaScript e recursos; `--no-bundler` evita iniciar o servidor de desenvolvimento, e `--no-install` evita reinstalar dependências.
-
-Os diretórios `ios/` e `android/` são gerados pelo Expo Prebuild e permanecem ignorados pelo Git, conforme a estratégia de [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/). As configurações reproduzíveis ficam em `app.json` e no lockfile JavaScript. A equipe e as credenciais de assinatura são locais e precisam ser configuradas novamente após regenerar o projeto ou preparar outro Mac. Não versionar certificados, perfis, logs ou arquivos de ambiente locais.
-
-Em 07/11/2026, o usuário aprovou no iPhone 8 Plus com iOS 16.7.16 a abertura, identificação do grupo, desafio dos Três Poderes, temporizador, resposta, pontuação e reinício em modo avião, com Wi-Fi desligado e sem Metro. A instalação utilizou Personal Team gratuito; foi necessário confiar no desenvolvedor no próprio aparelho. O perfil dessa instalação vence em 14/11/2026 e exigirá nova assinatura e instalação após expirar.
-
-Referências: [Expo SDK 58](https://docs.expo.dev/versions/v58.0.0/) e [inicialização do ambiente de desenvolvimento](https://docs.expo.dev/get-started/start-developing/).
-
-## Testes e verificações
-
-Execute os comandos na raiz, após instalar as dependências.
-
-### Testes unitários com Jest
-
-```sh
-npm test -- --runInBand --watch=false --no-cache
-```
-
-A suíte atual está em [`src/domain/score.test.ts`](src/domain/score.test.ts) e contém três testes da função `calculateScore`: acerto, erro e tempo esgotado. Os testes verificam a pontuação correspondente a cada resultado; não exercitam o temporizador ou a interface.
-
-### Verificação TypeScript
-
-```sh
-npx --no-install tsc --noEmit
-```
-
-Confere os tipos sem gerar arquivos de saída.
-
-### Compatibilidade das dependências com Expo
-
-```sh
-npx --no-install expo install --check
-```
-
-Confere as versões esperadas para o SDK instalado. A verificação completa pode consultar metadados pela rede. Esse comando não substitui uma auditoria de vulnerabilidades.
-
-Na consolidação da baseline iOS, os três testes unitários, a verificação TypeScript e a checagem online de compatibilidade Expo foram aprovados. A validação física manual descrita acima complementa esses testes, sem ampliar a cobertura automatizada. Não há comando de lint configurado no `package.json`.
-
-## TDD aplicado à pontuação
-
-O primeiro ciclo de TDD foi aplicado à regra de domínio `calculateScore`:
-
-1. **RED:** os três testes foram escritos antes da implementação. A suíte falhou ao importar o módulo inexistente; nenhuma asserção chegou a executar nessa fase.
-2. **GREEN:** foi implementada a função mínima que retorna 100 para `correct` e 0 para `incorrect` ou `timeout`, fazendo os três testes passarem.
-3. **REFACTOR:** a implementação foi revisada. Não foi necessária refatoração adicional, pois a regra já estava expressa de forma simples, sem duplicação ou efeitos colaterais.
-
-As evidências originais estão em [`docs/evidencias-tdd/`](docs/evidencias-tdd/):
-
-- [Descrição do ciclo e dos comandos](docs/evidencias-tdd/README.md).
-- [RED — falha inicial](docs/evidencias-tdd/01-red-score.txt).
-- [GREEN — testes aprovados](docs/evidencias-tdd/02-green-score.txt).
-- [REFACTOR e verificações finais](docs/evidencias-tdd/03-refactor-score.txt).
-
-Esses registros documentam a construção da regra de pontuação, não a cobertura completa do aplicativo.
+As evidências de TDD da Etapa 2 estão em [`docs/evidencias-tdd/dev-urna/`](docs/evidencias-tdd/dev-urna/README.md). As da Etapa 1 continuam em [`docs/evidencias-tdd/`](docs/evidencias-tdd/README.md).
 
 ## Limitações conhecidas
 
-- Apenas um desafio fixo; não há catálogo ou edição de perguntas.
-- Não há backend, banco de dados, autenticação, persistência de visitas ou ranking entre grupos.
-- O fluxo de visita não contempla ainda um roteiro completo com múltiplas etapas e desafios.
-- A cobertura automatizada está restrita à pontuação. Faltam testes de componentes, interação, temporização e fluxo completo.
-- A validação física está limitada ao fluxo atual em um iPhone 8 Plus com iOS 16.7.16. Ainda não há estudo de uso com visitantes nem validação física de outros aparelhos ou Android.
-- O script web existe no `package.json`, mas `react-dom` e `react-native-web` não estão declarados como dependências diretas. A execução web não é apresentada como ambiente pronto ou validado.
+- **A urna não sabe quem é quem.** Se um aluno do C1 tocar em "L1" por engano, o voto conta para o L1, e mais tarde um aluno do L1 encontra o grupo cheio. A tela orienta a chamar a guia. Resolver de vez exigiria identificar o eleitor, o que custa tempo e sigilo. Esse comportamento está documentado como teste.
+- Com **vários tablets sem rede ao mesmo tempo**, cada um só sabe dos próprios votos guardados. O PC recusa o excedente quando eles reconectam, e o tablet avisa. Por isso o ideal é rede estável e um tablet por vez em cada grupo.
+- Votos guardados offline que chegam **depois** de a guia encerrar a votação são recusados ("a votação já tinha sido encerrada"). O painel mostra quantos votos cada tablet tem guardados, para a guia esperar antes de encerrar.
+- O painel da guia não tem senha: qualquer aparelho na mesma rede pode abri-lo. Na rede própria (roteador da guia), isso não é problema.
+- A integração com a simulação HTML (guia e telão lendo os votos direto do servidor) ainda não foi feita. O servidor já aceita chamadas da página HTML (CORS liberado).
+- APK e app iOS **ainda não foram compilados nem validados em aparelho** nesta versão.
 
-## Próximos passos — Etapa 2
+## Histórico
 
-- Definir e priorizar os incrementos do MVP para a jornada de visita guiada.
-- Evoluir o fluxo e o conteúdo educativo a partir dos requisitos da Etapa 2.
-- Ampliar os testes para interface, respostas, temporizador, reinício e integração entre as etapas.
-- Ampliar a validação para outros dispositivos físicos e revisar acessibilidade e usabilidade.
-- Realizar avaliação com usuários no contexto das visitas e incorporar os resultados às próximas iterações.
+- **Etapa 1 (nov/2026):** protótipo com um desafio dos Três Poderes, temporizador e pontuação, validado em iPhone 8 Plus. Descartado na Etapa 2. O código está no histórico do Git, e as evidências de TDD continuam em `docs/`.
+- **Etapa 2:** o App vira a urna de votação da atividade do Plenário.
