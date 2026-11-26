@@ -1,0 +1,562 @@
+Fase RED — DEV-URNA-02 (regra de votos da urna)
+Node: v22.23.5
+Comando: node node_modules/jest/bin/jest.js --runInBand --watch=false --watchman=false --no-cache src/domain/urna.test.ts
+urna.ts existente: não
+
+FAIL src/domain/urna.test.ts
+  ● Test suite failed to run
+
+    Cannot find module './urna' from 'src/domain/urna.test.ts'
+
+    However, Jest was able to find:
+    	'./urna.test.ts'
+
+    You might want to include a file extension in your import, or update your 'moduleFileExtensions', which is currently ['js', 'mjs', 'cjs', 'jsx', 'ts', 'mts', 'cts', 'tsx', 'json', 'node'].
+
+    See https://jestjs.io/docs/configuration#modulefileextensions-arraystring
+
+    > 1 | import {
+        | ^
+      2 |   apurar, contagemPorGrupo, parseVoto, registrarVoto, totalAlunos,
+      3 |   type GrupoUrna, type SessaoUrna, type Voto,
+      4 | } from './urna';
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:1031:11)
+      at Object.require (src/domain/urna.test.ts:1:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        1.321 s
+Ran all test suites matching src/domain/urna.test.ts.
+Código de saída: 1
+
+=== RED, segunda execução: esqueleto com as assinaturas (sem regra), para as asserções rodarem ===
+
+FAIL src/domain/urna.test.ts
+  ● registrarVoto: limite por grupo (defeito da simulação, casos 1, 2 e 4) › caso 1: aceita votos de um grupo até o tamanho dele
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:38:31)
+
+  ● registrarVoto: limite por grupo (defeito da simulação, casos 1, 2 e 4) › caso 2: recusa o voto de número tamanho + 1 (o 6º voto do L1)
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:44:31)
+
+  ● registrarVoto: limite por grupo (defeito da simulação, casos 1, 2 e 4) › o reteste do Leao: 12 tentativas no L1 de 5 pessoas resultam em 5 votos
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:50:19)
+
+  ● registrarVoto: limite por grupo (defeito da simulação, casos 1, 2 e 4) › caso 4: o total aceito nunca passa da soma dos tamanhos dos grupos
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:57:19)
+
+  ● registrarVoto: limite por grupo (defeito da simulação, casos 1, 2 e 4) › caso 5 (limite conhecido): a urna não sabe quem é quem; um voto no grupo errado ocupa a vaga
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:64:31)
+
+  ● registrarVoto: reenvio do mesmo voto (rede instável) › o mesmo voto enviado de novo conta uma vez só
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:78:31)
+
+  ● registrarVoto: reenvio do mesmo voto (rede instável) › reenvio de um voto já aceito é DUPLICADO mesmo depois de a guia encerrar a votação
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:85:19)
+
+  ● registrarVoto: reenvio do mesmo voto (rede instável) › o mesmo id com outra escolha não troca o voto já guardado
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:29:28
+          at Array.map (<anonymous>)
+      at map (src/domain/urna.test.ts:28:28)
+      at Object.votar (src/domain/urna.test.ts:90:31)
+
+  ● registrarVoto: outras recusas › urna fechada não aceita voto novo
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at Object.<anonymous> (src/domain/urna.test.ts:98:25)
+
+  ● registrarVoto: outras recusas › grupo inexistente
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at Object.<anonymous> (src/domain/urna.test.ts:103:25)
+
+  ● registrarVoto: outras recusas › regra inexistente
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at Object.<anonymous> (src/domain/urna.test.ts:108:25)
+
+  ● registrarVoto: outras recusas › com "proibir voto na própria regra", recusa o voto do grupo na própria regra
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at Object.<anonymous> (src/domain/urna.test.ts:114:25)
+
+  ● registrarVoto: outras recusas › sem essa opção, votar na própria regra é permitido
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at Object.<anonymous> (src/domain/urna.test.ts:120:25)
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: undefined
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: null
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: "L1"
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: 42
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: []
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: {}
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: {"group": "L1", "id": "a"}
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: {"group": "L1", "id": "", "rule": "C1"}
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: {"group": 1, "id": "a", "rule": "C1"}
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: outras recusas › dado malformado vindo da rede é VOTO_INVALIDO: {"group": "L1", "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "rule": "C1"}
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at src/domain/urna.test.ts:130:28
+
+  ● registrarVoto: não altera a sessão recebida › devolve uma sessão nova e preserva a anterior
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at Object.<anonymous> (src/domain/urna.test.ts:139:38)
+
+  ● registrarVoto: não altera a sessão recebida › guarda só id, grupo e regra (campos extras não entram)
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:7:105)
+      at Object.<anonymous> (src/domain/urna.test.ts:146:38)
+
+  ● parseVoto › aceita um voto bem formado e descarta campos extras
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:6:55)
+      at Object.<anonymous> (src/domain/urna.test.ts:153:21)
+
+  ● parseVoto › recusa o que não é voto
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:6:55)
+      at Object.<anonymous> (src/domain/urna.test.ts:156:21)
+
+  ● apurar: mesma apuração da simulação 3 › ordena por votos e aprova as x mais votadas
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:10:73)
+      at Object.<anonymous> (src/domain/urna.test.ts:169:21)
+
+  ● apurar: mesma apuração da simulação 3 › empate no corte aprova as empatadas; regra sem voto nunca é aprovada
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:10:73)
+      at Object.<anonymous> (src/domain/urna.test.ts:177:22)
+
+  ● apurar: mesma apuração da simulação 3 › mostra quanto cada lado votou em regra do outro lado
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:10:73)
+      at Object.<anonymous> (src/domain/urna.test.ts:182:21)
+
+  ● apurar: mesma apuração da simulação 3 › sem votos, tudo zerado e nenhuma aprovada
+
+    não implementado
+
+      3 | export type Voto = { id: string; group: string; rule: string };
+      4 | export type SessaoUrna = { groups: GrupoUrna[]; noOwn: boolean; open: boolean; votes: Voto[] };
+    > 5 | const nao = (): never => { throw new Error('não implementado'); };
+        |                                  ^
+      6 | export const parseVoto = (_: unknown): Voto | null => nao();
+      7 | export const registrarVoto = (_s: SessaoUrna, _v: unknown): { session: SessaoUrna; result: unknown } => nao();
+      8 | export const contagemPorGrupo = (_s: SessaoUrna): Record<string, number> => nao();
+
+      at nao (src/domain/urna.ts:5:34)
+      at nao (src/domain/urna.ts:10:73)
+      at Object.<anonymous> (src/domain/urna.test.ts:189:21)
+
+Test Suites: 1 failed, 1 total
+Tests:       31 failed, 31 total
+Snapshots:   0 total
+Time:        1.508 s
+Ran all test suites matching src/domain/urna.test.ts.
+Código de saída: 1
