@@ -48,3 +48,6 @@ yarn-error.*
 # local-only folders at repository root
 /How8-VisitaGuiadaApp/
 /evidencias-prototipo/
+
+# votos salvos pelo servidorzinho do PC (ficam só no PC da guia)
+/servidor/dados/
