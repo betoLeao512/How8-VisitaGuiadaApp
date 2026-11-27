@@ -1,7 +1,7 @@
 // Testes do servidorzinho: npm run test:servidor
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { criarServidor } from './servidor-urna.mjs';
+import { criarServidor, ordenarEnderecos } from './servidor-urna.mjs';
 
 let server, base;
 before(async () => {
@@ -153,4 +153,15 @@ test('serve a pasta da simulação, com Range para áudio, e não deixa sair da 
   } finally {
     s.close();
   }
+});
+
+test('endereço do Wi-Fi vem primeiro; VPN vai para o fim (caso do Mac da guia)', () => {
+  const v4 = address => ({ address, family: 'IPv4', internal: false });
+  const ips = ordenarEnderecos({
+    lo0: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+    utun4: [v4('172.16.5.152')],
+    en0: [v4('192.168.8.233'), { address: 'fe80::1', family: 'IPv6', internal: false }],
+    bridge100: [v4('192.168.64.1')],
+  });
+  assert.deepEqual(ips, ['192.168.8.233', '172.16.5.152', '192.168.64.1']);
 });

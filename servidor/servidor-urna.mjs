@@ -246,9 +246,22 @@ function responder(res, status, dados) {
   res.end(JSON.stringify(dados));
 }
 
+/* Endereços IPv4 do PC, com o do Wi-Fi primeiro. VPN, máquinas virtuais e pontes vão para o fim,
+   porque o tablet não alcança esses endereços (no Mac da guia, uma VPN aparecia antes do Wi-Fi). */
+export function ordenarEnderecos(interfaces) {
+  const peso = (nome, ip) => {
+    if (/^(utun|tun|tap|ppp|ipsec|vmnet|vbox|virbr|docker|br-|bridge|awdl|llw|zt|tailscale|wg)/i.test(nome)) return 9;
+    let p = /^(en0|wlan|wi-?fi|wl)/i.test(nome) ? 0 : 3;
+    if (ip.startsWith('192.168.')) p += 0; else if (ip.startsWith('10.')) p += 1; else p += 2;
+    return p;
+  };
+  return Object.entries(interfaces)
+    .flatMap(([nome, lista]) => (lista || []).filter(i => i && i.family === 'IPv4' && !i.internal).map(i => ({ ip: i.address, p: peso(nome, i.address) })))
+    .sort((a, b) => a.p - b.p)
+    .map(x => x.ip);
+}
 function enderecosDaRede() {
-  return Object.values(os.networkInterfaces()).flat()
-    .filter(i => i && i.family === 'IPv4' && !i.internal).map(i => i.address);
+  return ordenarEnderecos(os.networkInterfaces());
 }
 
 // Execução direta (não nos testes).
@@ -269,8 +282,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     }
     const ips = enderecosDaRede();
     if (ips.length) {
-      console.log('\n  Endereço para digitar no tablet:');
-      for (const ip of ips) console.log(`    ${ip}:${porta}`);
+      console.log(`\n  Endereço para digitar no tablet:  ${ips[0]}:${porta}`);
+      if (ips.length > 1) console.log(`  (se não funcionar, tente: ${ips.slice(1).map(ip => `${ip}:${porta}`).join(' ou ')})`);
     } else {
       console.log('\n  Atenção: este PC não parece estar em nenhuma rede Wi-Fi ou cabeada.');
     }

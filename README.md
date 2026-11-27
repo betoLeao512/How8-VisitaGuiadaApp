@@ -105,7 +105,7 @@ Atenção: com a conta Apple gratuita, a instalação **vence em 7 dias**. Insta
 
 ```sh
 npm test                 # Jest: 141 testes (regra, fila, protocolo e telas)
-npm run test:servidor    # servidorzinho: 10 testes por HTTP
+npm run test:servidor    # servidorzinho: 16 testes
 npx tsc --noEmit         # tipos
 ```
 
